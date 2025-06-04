@@ -7,7 +7,7 @@ from datetime import datetime
 # --- Configuration ---
 API_ID = '23359622' # Your API ID
 API_HASH = '6dcf7c69c12b1dd770b569e8684256df' # Your API Hash
-GROUP_ID = 2606862659 # Your corrected group ID
+GROUP_ID = -2606862659 # Your corrected group ID
 SESSION_NAME = 'grabber_bot'
 
 # --- Logging Setup ---
