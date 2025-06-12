@@ -5,6 +5,8 @@ import logging
 from datetime import datetime
 import sys
 
+logging.basicConfig(level=logging.DEBUG)
+
 # --- Configuration ---
 API_ID = '23359622'
 API_HASH = '6dcf7c69c12b1dd770b569e8684256df'
