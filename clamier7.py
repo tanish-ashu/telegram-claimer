@@ -18,7 +18,6 @@ else:
     print(f"No session name provided. Using default: {SESSION_NAME}")
 
 # --- Logging Setup ---
-# A unique log file will be created for each session name.
 LOG_FILE_NAME = f'grabber_{SESSION_NAME}.log'
 logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -26,7 +25,7 @@ logging.basicConfig(
     filename=LOG_FILE_NAME,
     filemode='a'
 )
-# Also log to console
+# Also log to console for real-time feedback
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
@@ -43,7 +42,6 @@ async def main():
         return
 
     client = TelegramClient(SESSION_NAME, api_id_int, API_HASH,
-                            # These settings can sometimes improve connection stability
                             connection_retries=5,
                             retry_delay=5)
 
@@ -68,7 +66,8 @@ async def main():
         logger.info(f"✅ Successfully logged in as: {myself.first_name} (ID: {myself.id})")
 
         try:
-            target_group_entity = await client.get_entity(GROUP_ID)
+            # The Group ID must be an integer
+            target_group_entity = await client.get_entity(int(GROUP_ID))
             logger.info(f"👀 Monitoring Group: '{getattr(target_group_entity, 'title', 'Unknown Title')}' (ID: {target_group_entity.id})")
         except Exception as e:
             logger.error(f"🚨 Could not find or access group with ID {GROUP_ID}. Error: {e}")
@@ -85,21 +84,23 @@ async def main():
 
     @client.on(events.NewMessage(chats=target_group_entity))
     async def handler(event):
-        # High-speed logic: Directly check for buttons containing "CLAIM"
-        if event.message.reply_markup:
+        # High-speed logic: Check for inline keyboard buttons. This is much more robust.
+        if event.message.reply_markup and hasattr(event.message.reply_markup, 'rows'):
             for row in event.message.reply_markup.rows:
                 for button in row.buttons:
-                    # Using .upper() is fast and effective
+                    # Check for "CLAIM" in the button's visible text.
                     if "CLAIM" in button.text.upper():
                         try:
-                            # Attempting to click is the fastest check.
-                            await button.click()
-                            # Using logger instead of print for better performance in async context
+                            # *** FIX APPLIED HERE ***
+                            # Click the button via the MESSAGE object, passing the specific button's data.
+                            # This is the correct way to handle 'KeyboardButtonCallback'.
+                            await event.message.click(data=button.data)
                             logger.info(f"🚀 CLAIMED! (Button: '{button.text}' on MsgID: {event.message.id})")
-                            return # Exit after the first successful claim
+                            # Exit the handler for this message after a successful claim.
+                            return
                         except Exception as e:
                             logger.warning(f"⚠️ Failed to click button '{button.text}' on MsgID {event.message.id}. Reason: {e}")
-                        # We don't check for other buttons in the same message to save time
+                            # Continue to the next button if this one fails for some reason.
 
     try:
         await client.run_until_disconnected()
