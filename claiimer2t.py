@@ -1,7 +1,6 @@
-# Script: S1 - High-Speed Auto-Claimer
+# Script: S2 - Corrected High-Speed Auto-Claimer
 import asyncio
-from telethon import TelegramClient, events, functions
-from telethon.tl.types import Message
+from telethon import TelegramClient, events
 import logging
 from datetime import datetime
 import sys
@@ -43,15 +42,10 @@ async def main():
         logger.error("🚨 Invalid API_ID format. It should be an integer.")
         return
 
-    # Connect the client with a reduced update buffer for potentially faster event handling
-    client = TelegramClient(SESSION_NAME, api_id_int, API_HASH,
-                            device_model="Pixel 6 Pro",
-                            system_version="Android 14",
-                            app_version="10.13.2"
-                           )
+    client = TelegramClient(SESSION_NAME, api_id_int, API_HASH)
 
-    print("=== Telegram Auto-Claimer (S1: High-Speed Mode) ===")
-    logger.info("Bot starting in S1 High-Speed mode...")
+    print("=== Telegram Auto-Claimer (S2: Corrected High-Speed Mode) ===")
+    logger.info("Bot starting in S2 Corrected High-Speed mode...")
 
     try:
         print("🔄 Connecting to Telegram...")
@@ -96,7 +90,7 @@ async def main():
         return
 
     # --------------------------------------------------------------------
-    # CORE HANDLER: This is the new, high-speed logic.
+    # CORE HANDLER: This is the new, corrected, high-speed logic.
     # --------------------------------------------------------------------
     @client.on(events.NewMessage(chats=target_group_entity))
     async def high_speed_handler(event: events.NewMessage.Event):
@@ -104,33 +98,28 @@ async def main():
         This handler is optimized for speed. It assumes the target button is
         always the first one and clicks it without any checks or loops.
         """
-        # A message with buttons has a 'reply_markup'. This is the only check we do.
+        # A message with buttons has a 'reply_markup'. This is a fast and essential check.
         if event.message.reply_markup:
             try:
-                # OPTIMIZATION: Directly access the first button object.
-                # This avoids all loops and text comparisons for maximum speed.
-                # Assumes structure: first row (index 0), first button (index 0).
-                first_button = event.message.reply_markup.rows[0].buttons[0]
-
-                # ACTION: Click the button directly using its object.
-                # This is the fastest way to interact with a callback button.
-                await first_button.click()
+                # CORRECTION: Use event.message.click(0, 0)
+                # This is the correct, documented, and fastest way to click the
+                # button at the first row (index 0) and first column (index 0).
+                await event.message.click(0, 0)
 
                 # Log success after the click.
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3] # Timestamp with milliseconds
-                print(f"[{timestamp}] 🚀 CLAIMED! (Button: '{first_button.text}' on MsgID: {event.message.id})")
-                logger.info(f"✅ SUCCESS: Clicked button '{first_button.text}' on MsgID: {event.message.id}.")
+                print(f"[{timestamp}] 🚀 CLAIMED! (Clicked button at [0,0] on MsgID: {event.message.id})")
+                logger.info(f"✅ SUCCESS: Clicked button at position [0,0] on MsgID: {event.message.id}.")
 
-            except (IndexError, TypeError):
-                # This might happen if a message has a markup but no buttons, which is rare.
-                # We log it but don't print to the console to avoid clutter.
-                logger.warning(f"Message {event.message.id} had a reply_markup but no button at position (0,0).")
             except Exception as e:
-                # Catch other potential errors during the click, e.g., if the
-                # button is expired or the click fails for other reasons.
+                # Catch any error during the click, e.g., if the button is expired
+                # or the message doesn't have a button at position [0,0].
                 # This prevents the script from crashing.
-                logger.error(f"⚠️ FAILED to click button on MsgID {event.message.id}: {e}")
-                print(f"⚠️ Error clicking button on MsgID {event.message.id}: {e}")
+                logger.error(f"⚠️ FAILED to click button on MsgID {event.message.id}: {e}", exc_info=False)
+                # To keep the console clean, we will not print every error,
+                # but you can uncomment the line below for debugging if needed.
+                # print(f"⚠️ Error clicking button on MsgID {event.message.id}: {e}")
+
     # --------------------------------------------------------------------
 
     try:
